@@ -1,5 +1,4 @@
 import * as Expr from './types/expression';
-import * as Stmt from './types/statement';
 import { Console } from './console';
 import { Scope } from './scope';
 import { TokenType } from './token';
@@ -18,9 +17,7 @@ import { Scanner } from './scanner';
 import { Parser } from './parser';
 declare var conzole: Console;
 
-export class Interpreter implements
-    Expr.ExprVisitor<$Any>,
-    Stmt.StmtVisitor<$Any> {
+export class Interpreter implements Expr.ExprVisitor<$Any> {
     public global = new Scope();
     public scope = this.global;
     public errors: string[] = [];
@@ -45,15 +42,11 @@ export class Interpreter implements
         return expr.result = expr.accept(this);
     }
 
-    private execute(stmt: Stmt.Stmt): $Any {
-        return stmt.result = stmt.accept(this);
-    }
-
-    public eval(stmt: Stmt.Stmt): any {
+    public eval(expr: Expr.Expr): any {
         try {
             return  {
                 error: false,
-                value: stmt.accept(this).toString(),
+                value: expr.accept(this).toString(),
             };
         } catch (e) {
             return {
@@ -63,11 +56,11 @@ export class Interpreter implements
         }
     }
 
-    public interpet(statements: Stmt.Stmt[]): Stmt.Stmt[] {
+    public interpet(statements: Expr.Expr[]): Expr.Expr[] {
         this.errors = [];
         for (const statement of statements) {
             try {
-                this.execute(statement);
+                this.evaluate(statement);
             } catch (e) {
                 conzole.error(e.message);
                 this.errors.push(e.message);
@@ -84,25 +77,25 @@ export class Interpreter implements
         throw new Error(`Runtime Error => ${message}`);
     }
 
-    public visitExpressionStmt(stmt: Stmt.Expression): $Any {
-        return this.evaluate(stmt.expression);
+    public visitExpressionExpr(expr: Expr.Expression): $Any {
+        return this.evaluate(expr.expression);
     }
 
-    public visitPrintStmt(stmt: Stmt.Print): $Any {
-        const data = this.evaluate(stmt.expression);
+    public visitPrintExpr(expr: Expr.Print): $Any {
+        const data = this.evaluate(expr.expression);
         conzole.log(data.toString());
         return data;
     }
 
-    public visitVarStmt(stmt: Stmt.Var): $Any {
+    public visitVarExpr(expr: Expr.Var): $Any {
         let value = new $Null();
-        if (stmt.initializer !== null) {
-            value = this.evaluate(stmt.initializer);
+        if (expr.initializer !== null) {
+            value = this.evaluate(expr.initializer);
         }
         if (value.isLambda()) {
-            (value as any).name = stmt.name.lexeme;
+            (value as any).name = expr.name.lexeme;
         }
-        this.scope.define(stmt.name.lexeme, value);
+        this.scope.define(expr.name.lexeme, value);
         return value;
     }
 
@@ -134,7 +127,7 @@ export class Interpreter implements
         }
         let result = '';
         for (const statement of statements) {
-            result += this.execute(statement).toString();
+            result += this.evaluate(statement).toString();
         }
         return result;
     }
@@ -269,32 +262,32 @@ export class Interpreter implements
         }
     }
 
-    public executeBlock(statements: Stmt.Stmt[], nextScope: Scope): $Any {
+    public executeBlock(statements: Expr.Expr[], nextScope: Scope): $Any {
         const currentScope = this.scope;
         this.scope = nextScope;
         for (const statement of statements) {
-            statement.result = this.execute(statement);
+            statement.result = this.evaluate(statement);
         }
         this.scope = currentScope;
         return new $Void();
     }
 
-    public visitBlockStmt(stmt: Stmt.Block): $Any {
-        return this.executeBlock(stmt.statements, new Scope(this.scope));
+    public visitBlockExpr(expr: Expr.Block): $Any {
+        return this.executeBlock(expr.statements, new Scope(this.scope));
     }
 
-    public visitIfStmt(stmt: Stmt.If): $Any {
-        if (this.evaluate(stmt.condition).isTruthy()) {
-            return this.execute(stmt.thenStmt);
-        } else if (stmt.elseStmt !== null) {
-            return this.execute(stmt.elseStmt);
+    public visitIfExpr(expr: Expr.If): $Any {
+        if (this.evaluate(expr.condition).isTruthy()) {
+            return this.evaluate(expr.thenExpr);
+        } else if (expr.elseExpr !== null) {
+            return this.evaluate(expr.elseExpr);
         }
     }
 
-    public visitWhileStmt(stmt: Stmt.While): $Any {
-        while (this.evaluate(stmt.condition).isTruthy()) {
+    public visitWhileExpr(expr: Expr.While): $Any {
+        while (this.evaluate(expr.condition).isTruthy()) {
             try {
-                this.execute(stmt.loop);
+                this.evaluate(expr.loop);
             } catch (e) {
                 if (e instanceof $Any && e.type === DataType.Break) {
                     break;
@@ -373,31 +366,31 @@ export class Interpreter implements
         return value.value;
     }
 
-    public visitFuncStmt(stmt: Stmt.Func): $Any {
-        const func = new $Function(stmt, this.scope);
-        this.scope.define(stmt.name.lexeme, func);
+    public visitFuncExpr(expr: Expr.Func): $Any {
+        const func = new $Function(expr, this.scope);
+        this.scope.define(expr.name.lexeme, func);
         return func;
     }
 
     public visitLambdaExpr(expr: Expr.Lambda): $Any {
-        const lambda: Stmt.Func = expr.lambda as Stmt.Func;
+        const lambda: Expr.Func = expr.lambda as Expr.Func;
         const func: $Function = new $Function(lambda, this.scope);
         return func;
     }
 
-    public visitReturnStmt(stmt: Stmt.Return): $Any {
+    public visitReturnExpr(expr: Expr.Return): $Any {
         let value = new $Null();
-        if (stmt.value) {
-            value = this.evaluate(stmt.value);
+        if (expr.value) {
+            value = this.evaluate(expr.value);
         }
         throw new $Any(value, DataType.Return);
     }
 
-    public visitBreakStmt(stmt: Stmt.Break): $Any {
+    public visitBreakExpr(expr: Expr.Break): $Any {
         throw new $Any(null, DataType.Break);
     }
 
-    public visitContinueStmt(stmt: Stmt.Continue): $Any {
+    public visitContinueExpr(expr: Expr.Continue): $Any {
         throw new $Any(null, DataType.Continue);
     }
 
@@ -406,7 +399,7 @@ export class Interpreter implements
         return new $String(DataType[value.type].toLowerCase());
     }
 
-    public visitUseStmt(stmt: Stmt.Use): $Any {
+    public visitUseExpr(expr: Expr.Use): $Any {
         return new $Void();
     }
 

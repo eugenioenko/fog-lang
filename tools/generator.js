@@ -9,7 +9,7 @@ const ExpressionAST = {
     Get: ['entity: Expr', 'key: Expr', 'type: TokenType'],
     Grouping: ['expression: Expr'],
     Key: ['name: Token'],
-    Lambda: ['lambda: Stmt'],
+    Lambda: ['lambda: Expr'],
     Logical: ['left: Expr', 'operator: Token', 'right: Expr'],
     List: ['value: Expr[]'],
     Literal: ['value: $Any'],
@@ -19,20 +19,18 @@ const ExpressionAST = {
     Typeof: ['value: Expr'],
     Unary: ['operator: Token', 'right: Expr'],
     Variable: ['name: Token'],
-};
-
-const StatementAST = {
-    Block: ['statements: Stmt[]'],
+    // "Statements"
+    Block: ['statements: Expr[]'],
     Break: ['keyword: Token'],
     Continue: ['keyword: Token'],
     Expression : ['expression: Expr'],
-    Func: ['name: Token', 'params: Token[]', 'body: Stmt[]'],
-    If: ['condition: Expr', 'thenStmt: Stmt', 'elseStmt: Stmt'],
+    Func: ['name: Token', 'params: Token[]', 'body: Expr[]'],
+    If: ['condition: Expr', 'thenExpr: Expr', 'elseExpr: Expr'],
     Print : ['expression: Expr'],
     Return: ['keyword: Token', 'value: Expr'],
     Use: ['expression: Expr'],
     Var : ['name: Token', 'type: Token', 'initializer: Expr'],
-    While: ['condition: Expr', 'loop: Stmt']
+    While: ['condition: Expr', 'loop: Expr']
 };
 
 function generateAST(baseClass, AST, filename, imports = '') {
@@ -81,5 +79,4 @@ function generateAST(baseClass, AST, filename, imports = '') {
     });
 }
 
-generateAST('Expr', ExpressionAST, 'expression', `import { Token, TokenType } from 'token';\nimport { Stmt } from 'statement';\nimport { $Any } from 'any';\n\n`);
-generateAST('Stmt', StatementAST, 'statement', `import { Token } from 'token';\n\nimport { Expr } from 'expression';\n\n`);
+generateAST('Expr', ExpressionAST, 'expression', `import { Token, TokenType } from 'token';;\nimport { $Any } from 'any';\n\n`);

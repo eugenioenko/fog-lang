@@ -1,5 +1,4 @@
-import { Token, TokenType } from 'token';
-import { Stmt } from 'statement';
+import { Token, TokenType } from 'token';;
 import { $Any } from 'any';
 
 export abstract class Expr {
@@ -30,6 +29,17 @@ export interface ExprVisitor<R> {
     visitTypeofExpr(expr: Typeof): R;
     visitUnaryExpr(expr: Unary): R;
     visitVariableExpr(expr: Variable): R;
+    visitBlockExpr(expr: Block): R;
+    visitBreakExpr(expr: Break): R;
+    visitContinueExpr(expr: Continue): R;
+    visitExpressionExpr(expr: Expression): R;
+    visitFuncExpr(expr: Func): R;
+    visitIfExpr(expr: If): R;
+    visitPrintExpr(expr: Print): R;
+    visitReturnExpr(expr: Return): R;
+    visitUseExpr(expr: Use): R;
+    visitVarExpr(expr: Var): R;
+    visitWhileExpr(expr: While): R;
 }
 
 export class Assign extends Expr {
@@ -193,9 +203,9 @@ export class Key extends Expr {
 }
 
 export class Lambda extends Expr {
-    public lambda: Stmt;
+    public lambda: Expr;
 
-    constructor(lambda: Stmt, line: number) {
+    constructor(lambda: Expr, line: number) {
         super();
         this.lambda = lambda;
         this.line = line;
@@ -381,6 +391,220 @@ export class Variable extends Expr {
 
     public toString(): string {
         return 'Expr.Variable';
+    }
+}
+
+export class Block extends Expr {
+    public statements: Expr[];
+
+    constructor(statements: Expr[], line: number) {
+        super();
+        this.statements = statements;
+        this.line = line;
+    }
+
+    public accept<R>(visitor: ExprVisitor<R>): R {
+        return visitor.visitBlockExpr(this);
+    }
+
+    public toString(): string {
+        return 'Expr.Block';
+    }
+}
+
+export class Break extends Expr {
+    public keyword: Token;
+
+    constructor(keyword: Token, line: number) {
+        super();
+        this.keyword = keyword;
+        this.line = line;
+    }
+
+    public accept<R>(visitor: ExprVisitor<R>): R {
+        return visitor.visitBreakExpr(this);
+    }
+
+    public toString(): string {
+        return 'Expr.Break';
+    }
+}
+
+export class Continue extends Expr {
+    public keyword: Token;
+
+    constructor(keyword: Token, line: number) {
+        super();
+        this.keyword = keyword;
+        this.line = line;
+    }
+
+    public accept<R>(visitor: ExprVisitor<R>): R {
+        return visitor.visitContinueExpr(this);
+    }
+
+    public toString(): string {
+        return 'Expr.Continue';
+    }
+}
+
+export class Expression extends Expr {
+    public expression: Expr;
+
+    constructor(expression: Expr, line: number) {
+        super();
+        this.expression = expression;
+        this.line = line;
+    }
+
+    public accept<R>(visitor: ExprVisitor<R>): R {
+        return visitor.visitExpressionExpr(this);
+    }
+
+    public toString(): string {
+        return 'Expr.Expression';
+    }
+}
+
+export class Func extends Expr {
+    public name: Token;
+    public params: Token[];
+    public body: Expr[];
+
+    constructor(name: Token, params: Token[], body: Expr[], line: number) {
+        super();
+        this.name = name;
+        this.params = params;
+        this.body = body;
+        this.line = line;
+    }
+
+    public accept<R>(visitor: ExprVisitor<R>): R {
+        return visitor.visitFuncExpr(this);
+    }
+
+    public toString(): string {
+        return 'Expr.Func';
+    }
+}
+
+export class If extends Expr {
+    public condition: Expr;
+    public thenExpr: Expr;
+    public elseExpr: Expr;
+
+    constructor(condition: Expr, thenExpr: Expr, elseExpr: Expr, line: number) {
+        super();
+        this.condition = condition;
+        this.thenExpr = thenExpr;
+        this.elseExpr = elseExpr;
+        this.line = line;
+    }
+
+    public accept<R>(visitor: ExprVisitor<R>): R {
+        return visitor.visitIfExpr(this);
+    }
+
+    public toString(): string {
+        return 'Expr.If';
+    }
+}
+
+export class Print extends Expr {
+    public expression: Expr;
+
+    constructor(expression: Expr, line: number) {
+        super();
+        this.expression = expression;
+        this.line = line;
+    }
+
+    public accept<R>(visitor: ExprVisitor<R>): R {
+        return visitor.visitPrintExpr(this);
+    }
+
+    public toString(): string {
+        return 'Expr.Print';
+    }
+}
+
+export class Return extends Expr {
+    public keyword: Token;
+    public value: Expr;
+
+    constructor(keyword: Token, value: Expr, line: number) {
+        super();
+        this.keyword = keyword;
+        this.value = value;
+        this.line = line;
+    }
+
+    public accept<R>(visitor: ExprVisitor<R>): R {
+        return visitor.visitReturnExpr(this);
+    }
+
+    public toString(): string {
+        return 'Expr.Return';
+    }
+}
+
+export class Use extends Expr {
+    public expression: Expr;
+
+    constructor(expression: Expr, line: number) {
+        super();
+        this.expression = expression;
+        this.line = line;
+    }
+
+    public accept<R>(visitor: ExprVisitor<R>): R {
+        return visitor.visitUseExpr(this);
+    }
+
+    public toString(): string {
+        return 'Expr.Use';
+    }
+}
+
+export class Var extends Expr {
+    public name: Token;
+    public type: Token;
+    public initializer: Expr;
+
+    constructor(name: Token, type: Token, initializer: Expr, line: number) {
+        super();
+        this.name = name;
+        this.type = type;
+        this.initializer = initializer;
+        this.line = line;
+    }
+
+    public accept<R>(visitor: ExprVisitor<R>): R {
+        return visitor.visitVarExpr(this);
+    }
+
+    public toString(): string {
+        return 'Expr.Var';
+    }
+}
+
+export class While extends Expr {
+    public condition: Expr;
+    public loop: Expr;
+
+    constructor(condition: Expr, loop: Expr, line: number) {
+        super();
+        this.condition = condition;
+        this.loop = loop;
+        this.line = line;
+    }
+
+    public accept<R>(visitor: ExprVisitor<R>): R {
+        return visitor.visitWhileExpr(this);
+    }
+
+    public toString(): string {
+        return 'Expr.While';
     }
 }
 

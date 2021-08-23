@@ -3,14 +3,14 @@ import { Parser } from './parser';
 import { Interpreter } from './interpreter';
 import { Console } from './console';
 import { DemoSourceCode } from './demos/demo';
-import { Stmt } from './types/statement';
+import { Expr } from './types/expression';
 declare var window: any;
 declare var global: any;
 
 const conzole = new Console();
 
 const atscript = {
-    execute: (source: string): Stmt[] => {
+    execute: (source: string): Expr[] => {
         const scanner = new Scanner();
         const parser = new Parser();
         const interpreter = new Interpreter();

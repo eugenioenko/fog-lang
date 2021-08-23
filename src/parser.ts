@@ -1,5 +1,4 @@
 import * as Expr from './types/expression';
-import * as Stmt from './types/statement';
 import { Console } from './console';
 import { Token, TokenType } from './token';
 import { $Boolean } from './types/boolean';
@@ -16,11 +15,11 @@ export class Parser {
     public errors: string[];
     public errorLevel = 1;
 
-    public parse(tokens: Token[]): Stmt.Stmt[] {
+    public parse(tokens: Token[]): Expr.Expr[] {
         this.current = 0;
         this.tokens = tokens;
         this.errors = [];
-        const statements: Stmt.Stmt[] = [];
+        const statements: Expr.Expr[] = [];
         while (!this.eof()) {
             try {
                 statements.push(this.declaration());
@@ -132,7 +131,7 @@ export class Parser {
         } while (!this.eof());
     }
 
-    private declaration(): Stmt.Stmt {
+    private declaration(): Expr.Expr {
         if (this.match(TokenType.Function)) {
             return this.funcDeclaration("function");
         }
@@ -142,7 +141,7 @@ export class Parser {
         return this.statement();
     }
 
-    private funcDeclaration(kind: string): Stmt.Func {
+    private funcDeclaration(kind: string): Expr.Func {
         const name: Token = this.consume(TokenType.Identifier, `Expected a ${kind} name`);
         return this.funcParamsBody(name, kind);
     }
@@ -161,33 +160,33 @@ export class Parser {
         return params;
     }
 
-    private funcParamsBody(name: Token, kind: string): Stmt.Func {
+    private funcParamsBody(name: Token, kind: string): Expr.Func {
         this.consume(TokenType.LeftParen, `Expected open parenthesis "(" after ${kind}`);
         const params: Token[] = this.funcParams(kind);
 
         if (this.match(TokenType.LeftBrace)) {
-            const body: Stmt.Stmt[] = this.block();
+            const body: Expr.Expr[] = this.block();
             if (name.type !== TokenType.Lambda && this.extraSemicolon()) {
                 this.warning(`Unnecessary semicolon after function ${name.lexeme} declaration`);
             }
-            return new Stmt.Func(name, params, body, name.line);
+            return new Expr.Func(name, params, body, name.line);
         }
 
         if (this.match(TokenType.Arrow)) {
-            const body: Stmt.Stmt[] = [];
+            const body: Expr.Expr[] = [];
             let arrow: Expr.Expr;
             const keyword: Token = this.previous();
             if (!this.check(TokenType.Semicolon)) {
                 arrow = this.expression();
             }
             this.match(TokenType.Semicolon);
-            body.push(new Stmt.Return(keyword, arrow, keyword.line));
-            return new Stmt.Func(name, params, body, name.line);
+            body.push(new Expr.Return(keyword, arrow, keyword.line));
+            return new Expr.Func(name, params, body, name.line);
         }
         this.consume(TokenType.LeftBrace, `Expect "{" before ${kind} body`);
     }
 
-    private varDeclaration(): Stmt.Stmt {
+    private varDeclaration(): Expr.Expr {
         const name: Token = this.consume(TokenType.Identifier, `Expected a variable name after "var" keyword`);
         let initializer: Expr.Expr  = null;
         if (this.match(TokenType.Equal)) {
@@ -195,7 +194,7 @@ export class Parser {
         }
         this.consume(TokenType.Semicolon, `Expected semicolon ";" after a variable declaration`);
 
-        return new Stmt.Var(name, null, initializer, name.line);
+        return new Expr.Var(name, null, initializer, name.line);
     }
 
     private statement() {
@@ -209,7 +208,7 @@ export class Parser {
             return this.whileStatement();
         }
         if (this.match(TokenType.LeftBrace)) {
-            return new Stmt.Block(this.block(), this.previous().line);
+            return new Expr.Block(this.block(), this.previous().line);
         }
         if (this.match(TokenType.Return)) {
             return this.returnStatement();
@@ -223,36 +222,36 @@ export class Parser {
         return this.expressionStatement();
     }
 
-    private ifStatement(): Stmt.Stmt {
+    private ifStatement(): Expr.Expr {
         const keyword = this.previous();
         this.consume(TokenType.LeftParen, `Expected open parenthesis "(" after an "if" keyword`);
         const condition: Expr.Expr = this.expression();
         this.consume(TokenType.RightParen, `Expected close parenthesis ")" after "if" statement condition`);
-        const thenStmt: Stmt.Stmt = this.statement();
-        let elseStmt: Stmt.Stmt =  null;
+        const thenStmt: Expr.Expr = this.statement();
+        let elseStmt: Expr.Expr =  null;
         if (this.match(TokenType.Else)) {
             elseStmt = this.statement();
         }
-        return new Stmt.If(condition, thenStmt, elseStmt, keyword.line);
+        return new Expr.If(condition, thenStmt, elseStmt, keyword.line);
     }
 
-    private whileStatement(): Stmt.Stmt {
+    private whileStatement(): Expr.Expr {
         const keyword = this.previous();
         this.consume(TokenType.LeftParen, `Expected open parenthesis "(" after a "while" statement`);
         const condition: Expr.Expr = this.expression();
         this.consume(TokenType.RightParen, `Expected close parenthesis ")" after "while" condition`);
-        const loop: Stmt.Stmt = this.statement();
-        return new Stmt.While(condition, loop, keyword.line);
+        const loop: Expr.Expr = this.statement();
+        return new Expr.While(condition, loop, keyword.line);
     }
 
-    private printStatement(): Stmt.Stmt {
+    private printStatement(): Expr.Expr {
         const keyword = this.previous();
         const value: Expr.Expr = this.expression();
         this.consume(TokenType.Semicolon, `Expected semicolon ";" after expression`);
-        return new Stmt.Print(value, keyword.line);
+        return new Expr.Print(value, keyword.line);
     }
 
-    private returnStatement(): Stmt.Stmt {
+    private returnStatement(): Expr.Expr {
         const keyword: Token = this.previous();
         let value = null;
 
@@ -261,23 +260,23 @@ export class Parser {
         }
 
         this.consume(TokenType.Semicolon, `Exected semicolon ";" after return statement`);
-        return new Stmt.Return(keyword, value, keyword.line);
+        return new Expr.Return(keyword, value, keyword.line);
     }
 
-    private breakStatement(): Stmt.Stmt {
+    private breakStatement(): Expr.Expr {
         const keyword: Token = this.previous();
         this.consume(TokenType.Semicolon, `Exected semicolon ";" after break statement`);
-        return new Stmt.Break(keyword, keyword.line);
+        return new Expr.Break(keyword, keyword.line);
     }
 
-    private continueStatement(): Stmt.Stmt {
+    private continueStatement(): Expr.Expr {
         const keyword: Token = this.previous();
         this.consume(TokenType.Semicolon, `Exected semicolon ";" after continue statement`);
-        return new Stmt.Continue(keyword, keyword.line);
+        return new Expr.Continue(keyword, keyword.line);
     }
 
-    private block(): Stmt.Stmt[] {
-        const statements: Stmt.Stmt[] = [];
+    private block(): Expr.Expr[] {
+        const statements: Expr.Expr[] = [];
         while (!this.check(TokenType.RightBrace) && !this.eof()) {
             statements.push(this.declaration());
         }
@@ -285,7 +284,7 @@ export class Parser {
         return statements;
     }
 
-    private expressionStatement(): Stmt.Stmt {
+    private expressionStatement(): Expr.Expr {
         const expression: Expr.Expr = this.expression();
         this.consume(TokenType.Semicolon, `Expected semicolon ";" after ${expression} expression`);
         if (this.match(TokenType.Semicolon)) {
@@ -295,7 +294,7 @@ export class Parser {
             // tslint:disable-next-line
             while (this.match(TokenType.Semicolon)){ };
         }
-        return new Stmt.Expression(expression, expression.line);
+        return new Expr.Expression(expression, expression.line);
     }
 
     private expression(): Expr.Expr {
@@ -515,7 +514,7 @@ export class Parser {
         }
         if (this.match(TokenType.Function)) {
             const token: Token = new Token(TokenType.Lambda, '@', '@', this.previous().line, this.previous().col);
-            const lambda: Stmt.Func = this.funcParamsBody(token, 'lambda');
+            const lambda: Expr.Func = this.funcParamsBody(token, 'lambda');
             return new Expr.Lambda(lambda, token.line);
         }
         if (this.match(TokenType.LeftBracket)) {
