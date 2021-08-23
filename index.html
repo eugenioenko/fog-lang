@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html ng-app="app">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>fog lang</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="css/sdf.css">
+    <script src="./dist/atscript.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.2/ace.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.5/angular.min.js"></script>
+    <meta property="og:image" content="https://eugenioenko.github.io/interpreter/img/thumbnail.png">
+    <meta property="og:description" content="At-script is an interpreter of programming language somewhat similar to javascript writen in typescript">
+    <style>
+        #container {
+            max-width: 800px;
+            margin: auto;
+        }
+        #editor {
+            width: 100%;
+            height: 350px;
+        }
+        #console {
+            height: 150px;
+            overflow-y: auto;
+        }
+        * {
+            box-sizing: border-box;
+        }
+        .ace-monokai .ace_marker-layer .ace_selection {
+            background-color: #6d3231;
+        }
+    </style>
+</head>
+<body ng-controller="controller">
+    <div class="sdf-wrapper sdf-default" id="container">
+        <div class="sdf-grid">
+            <div class="sdf-cell sdf-12 sdf-padding">
+                <h1>fog lang</h1>
+                <h3>
+                    <small><i>fog</i> is an experimental programming language in which statements are treated more closly to expressions</small>
+                </h3>
+            </div>
+            <div class="sdf-cell sdf-12 sdf-padding">
+                <h3>Try it out!</h3>
+                <div id="editor"></div>
+            </div>
+            <div class="sdf-cell sdf-12 sdf-grid">
+                <div class="sdf-cell sdf-6">
+                    <button class="sdf-button sdf-success" ng-click="run()">EXECUTE</button>
+                </div>
+                <div class="sdf-cell sdf-6 sdf-text-right">
+                    <button class="sdf-button sdf-danger" ng-click="restart()">Restart</button>
+                    <button class="sdf-button sdf-primary" ng-click="step()">Step >></button>
+                </div>
+            </div>
+            <div class="sdf-cell sdf-12 sdf-padding">
+                <h3>Output</h3>
+                <div id="console">
+                    <table class="sdf-table">
+                        <tr ng-repeat="message in console.messages">
+                            <td class="sdf-dark" style="width: 50px;">
+                                {{ $index }}
+                            </td>
+                            <td ng-class="{
+                                'sdf-light': message.type === 0,
+                                'sdf-danger': message.type === 1,
+                                'sdf-warning': message.type === 2,
+                                'sdf-info': message.type === 3
+                            }">{{ message.text }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            <div class="sdf-cell sdf-12 sdf-padding">
+                <h3>Interested in learning more?</h3>
+                <p><a href="https://github.com/eugenioenko/interpreter" class="sdf-primary-inverse">Check the github project page here</a></p>
+            </div>
+        </div>
+    </div>
+    <a href="https://github.com/eugenioenko/interpreter" title="View source on GitHub" aria-label="View source on GitHub"><svg width="80" height="80" viewBox="0 0 250 250"
+            style="fill:#151513; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true">
+            <path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path>
+            <path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2"
+                fill="currentColor" style="transform-origin: 130px 106px;"></path>
+            <path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z"
+                fill="currentColor"></path>
+        </svg>
+    </a>
+    <script>
+        var editor;
+        var app = angular.module('app', []);
+            app.factory('editor', [function(){
+                editor = ace.edit("editor");
+                editor.session.setMode("ace/mode/javascript");
+                editor.getSession().setUseWorker(false);
+                editor.setTheme('ace/theme/monokai');
+                editor.setFontSize(16);
+                editor.setValue(demoSourceCode);
+                return editor;
+            }]);
+            app.controller('controller', ['$scope', 'editor', function ($scope, editor) {
+                conzole.log('Press EXECUTE button to run code');
+                $scope.console = conzole;
+                $scope.current = 0;
+                $scope.statements = null;
+                $scope.interpreter = null;
+
+                editor.selection.moveCursorToPosition({row: 2, column: 0});
+                editor.selection.selectLine();
+
+                $scope.scrollConsoleToBottom = function() {
+                    var container = document.getElementById("console");
+                    setTimeout(function() {
+                        container.scrollTop = container.scrollHeight;
+                    }, 1);
+                }
+                $scope.run = function() {
+                    var source = editor.getValue();
+                    conzole.clear();
+                    console.log(atscript.execute(source));
+                    $scope.scrollConsoleToBottom();
+
+                }
+
+                $scope.restart = function() {
+                    var source = editor.getValue();
+                    conzole.clear();
+                    $scope.current = 0;
+                    var scanner = new atscript.scanner();
+                    var tokens = scanner.scan(source);
+                    if (scanner.errors.length) {
+                        scanner.errors.forEach((e) => {
+                            window.conzole.error(e);
+                        });
+                    }
+                    var parser = new atscript.parser();
+                    $scope.statements = parser.parse(tokens);
+                    if (parser.errors.length) {
+                        parser.errors.forEach((e) => {
+                            window.conzole.error(e);
+                        });
+                        $scope.statements = [];
+                        return;
+                    }
+                    $scope.interpreter = new atscript.interpreter();
+                }
+
+                $scope.step = function() {
+                    if (!$scope.statements) {
+                        $scope.restart();
+                    }
+                    if ($scope.current < $scope.statements.length) {
+                        console.log($scope.interpreter.eval($scope.statements[$scope.current]).value);
+                        $scope.current++;
+                        var line = $scope.statements[$scope.current] ? $scope.statements[$scope.current].line - 1 : 0;
+                        editor.scrollToLine(line, true, true)
+                        editor.selection.moveCursorToPosition({row: (line), column: 0});
+                        editor.selection.selectLine();
+                    } else {
+                        conzole.log('Application ended. Please restart');
+                    }
+                    $scope.scrollConsoleToBottom();
+                }
+            }]);
+    </script>
+</body>
+</html>
