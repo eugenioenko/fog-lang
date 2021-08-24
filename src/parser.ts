@@ -190,28 +190,31 @@ export class Parser {
         const name: Token = this.consume(TokenType.Identifier, `Expected a variable name after "var" keyword`);
         let initializer: Expr.Expr  = null;
         if (this.match(TokenType.Equal)) {
-            initializer = this.statement();
+            initializer = this.condStatements();
         }
-        this.consume(TokenType.Semicolon, `Expected semicolon ";" after a variable declaration`);
 
         return new Expr.Var(name, null, initializer, name.line);
     }
 
     private statement() {
-        if (this.match(TokenType.If)) {
-            return this.ifStatement();
-        }
         if (this.match(TokenType.Print)) {
             return this.printStatement();
-        }
-        if (this.match(TokenType.While)) {
-            return this.whileStatement();
         }
         if (this.match(TokenType.LeftBrace)) {
             return new Expr.Block(this.block(), this.previous().line);
         }
         if (this.match(TokenType.Return)) {
             return this.returnStatement();
+        }
+        return this.condStatements();
+    }
+
+    private condStatements() {
+        if (this.match(TokenType.If)) {
+            return this.ifStatement();
+        }
+        if (this.match(TokenType.While)) {
+            return this.whileStatement();
         }
         return this.expressionStatement();
     }
@@ -237,7 +240,6 @@ export class Parser {
     private printStatement(): Expr.Expr {
         const keyword = this.previous();
         const value: Expr.Expr = this.expression();
-        this.consume(TokenType.Semicolon, `Expected semicolon ";" after expression`);
         return new Expr.Print(value, keyword.line);
     }
 
@@ -249,7 +251,6 @@ export class Parser {
             value = this.expression();
         }
 
-        this.consume(TokenType.Semicolon, `Exected semicolon ";" after return statement`);
         return new Expr.Return(keyword, value, keyword.line);
     }
 
@@ -264,14 +265,6 @@ export class Parser {
 
     private expressionStatement(): Expr.Expr {
         const expression: Expr.Expr = this.expression();
-        this.consume(TokenType.Semicolon, `Expected semicolon ";" after ${expression} expression`);
-        if (this.match(TokenType.Semicolon)) {
-            const token = this.previous();
-            this.warning(`[line (${token.line}) parse warning at "${token.lexeme}"] => unnecessary semicolon or empty statement`);
-            // consume all semicolons
-            // tslint:disable-next-line
-            while (this.match(TokenType.Semicolon)){ };
-        }
         return new Expr.Expression(expression, expression.line);
     }
 
