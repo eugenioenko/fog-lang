@@ -190,7 +190,7 @@ export class Parser {
         const name: Token = this.consume(TokenType.Identifier, `Expected a variable name after "var" keyword`);
         let initializer: Expr.Expr  = null;
         if (this.match(TokenType.Equal)) {
-            initializer = this.expression();
+            initializer = this.statement();
         }
         this.consume(TokenType.Semicolon, `Expected semicolon ";" after a variable declaration`);
 
@@ -213,20 +213,12 @@ export class Parser {
         if (this.match(TokenType.Return)) {
             return this.returnStatement();
         }
-        if (this.match(TokenType.Break)) {
-            return this.breakStatement();
-        }
-        if (this.match(TokenType.Continue)) {
-            return this.continueStatement();
-        }
         return this.expressionStatement();
     }
 
     private ifStatement(): Expr.Expr {
         const keyword = this.previous();
-        this.consume(TokenType.LeftParen, `Expected open parenthesis "(" after an "if" keyword`);
         const condition: Expr.Expr = this.expression();
-        this.consume(TokenType.RightParen, `Expected close parenthesis ")" after "if" statement condition`);
         const thenStmt: Expr.Expr = this.statement();
         let elseStmt: Expr.Expr =  null;
         if (this.match(TokenType.Else)) {
@@ -237,9 +229,7 @@ export class Parser {
 
     private whileStatement(): Expr.Expr {
         const keyword = this.previous();
-        this.consume(TokenType.LeftParen, `Expected open parenthesis "(" after a "while" statement`);
         const condition: Expr.Expr = this.expression();
-        this.consume(TokenType.RightParen, `Expected close parenthesis ")" after "while" condition`);
         const loop: Expr.Expr = this.statement();
         return new Expr.While(condition, loop, keyword.line);
     }
@@ -261,18 +251,6 @@ export class Parser {
 
         this.consume(TokenType.Semicolon, `Exected semicolon ";" after return statement`);
         return new Expr.Return(keyword, value, keyword.line);
-    }
-
-    private breakStatement(): Expr.Expr {
-        const keyword: Token = this.previous();
-        this.consume(TokenType.Semicolon, `Exected semicolon ";" after break statement`);
-        return new Expr.Break(keyword, keyword.line);
-    }
-
-    private continueStatement(): Expr.Expr {
-        const keyword: Token = this.previous();
-        this.consume(TokenType.Semicolon, `Exected semicolon ";" after continue statement`);
-        return new Expr.Continue(keyword, keyword.line);
     }
 
     private block(): Expr.Expr[] {
