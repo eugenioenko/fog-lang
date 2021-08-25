@@ -1,5 +1,4 @@
-export const DemoSourceCode =
-`
+export const DemoSourceCode = `
 
 var it = 0
 
@@ -39,4 +38,6 @@ print
     }
 // [5, 10, 15...50]
 
-`
+// and if you wondered why is this not a good idea:
+print if if 1 == 1 "true" else "false" == "true" "false" else "true"
+`;
