@@ -170,7 +170,7 @@ export class Parser {
             let arrow: Expr.Expr;
             const keyword: Token = this.previous();
             if (!this.check(TokenType.Semicolon)) {
-                arrow = this.expression();
+                arrow = this.condStatements();
             }
             this.match(TokenType.Semicolon);
             body.push(new Expr.Return(keyword, arrow, keyword.line));
@@ -199,7 +199,7 @@ export class Parser {
         if (this.match(TokenType.Return)) {
             return this.returnStatement();
         }
-        if (this.match(TokenType.Continue)) {
+        if (this.match(TokenType.Continue, TokenType.Use)) {
             return this.continueStatement();
         }
         if (this.match(TokenType.Break)) {
@@ -234,7 +234,7 @@ export class Parser {
 
     private whileStatement(): Expr.Expr {
         const keyword = this.previous();
-        const condition: Expr.Expr = this.expression();
+        const condition: Expr.Expr = this.condStatements();
         const loop: Expr.Expr = this.statement();
         return new Expr.While(condition, loop, keyword.line);
     }
@@ -243,14 +243,14 @@ export class Parser {
         const keyword = this.previous();
         const name = this.consume(TokenType.Identifier, `Expected an identifier inside "foreach" statement`);
         this.consume(TokenType.In, `Expected "in" keyword inside foreach statement`);
-        const iterable = this.expression();
+        const iterable = this.condStatements();
         const loop: Expr.Expr = this.statement();
         return new Expr.Each(name, iterable, loop, keyword.line);
     }
 
     private printStatement(): Expr.Expr {
         const keyword = this.previous();
-        const value: Expr.Expr = this.expression();
+        const value: Expr.Expr = this.condStatements();
         return new Expr.Print(value, keyword.line);
     }
 
@@ -259,7 +259,7 @@ export class Parser {
         let value = null;
 
         if (!this.check(TokenType.Semicolon)) {
-            value = this.expression();
+            value = this.condStatements();
         }
 
         return new Expr.Return(keyword, value, keyword.line);
@@ -267,14 +267,14 @@ export class Parser {
 
     private continueStatement(): Expr.Expr {
         const keyword: Token = this.previous();
-        const value = this.expression();
+        const value = this.condStatements();
 
         return new Expr.Continue(value, keyword.line);
     }
 
     private breakStatement(): Expr.Expr {
         const keyword: Token = this.previous();
-        const value = this.expression();
+        const value = this.condStatements();
 
         return new Expr.Break(value, keyword.line);
     }
@@ -431,7 +431,7 @@ export class Parser {
                     const args: Expr.Expr[] = [];
                     if (!this.check(TokenType.RightParen)) {
                         do {
-                            args.push(this.expression());
+                            args.push(this.condStatements());
                         } while (this.match(TokenType.Comma));
                     }
                     const paren: Token = this.consume(TokenType.RightParen, `Expected ")" after arguments`);
@@ -462,7 +462,7 @@ export class Parser {
         let step: Expr.Expr = new Expr.Literal(new $Number(1), operator.line);
 
         if (!this.check(TokenType.Colon)) {
-            key = this.expression();
+            key = this.condStatements();
         }
 
         return new Expr.Get(expr, key, operator.type, operator.line);
@@ -532,7 +532,7 @@ export class Parser {
             if (this.match(TokenType.String, TokenType.Identifier, TokenType.Number)) {
                 const key: Token = this.previous();
                 if (this.match(TokenType.Colon)) {
-                    const value = this.expression();
+                    const value = this.condStatements();
                     properties.push(new Expr.Set(null, new Expr.Key(key, key.line), value, key.line));
                 } else {
                     const value = new Expr.Variable(key, key.line);
@@ -555,7 +555,7 @@ export class Parser {
             return new Expr.List([], this.previous().line);
         }
         do {
-            values.push(this.expression());
+            values.push(this.condStatements());
         } while (this.match(TokenType.Comma));
 
         this.consume(TokenType.RightBracket, `Expected "]" after array declaration`);
