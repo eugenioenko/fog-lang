@@ -31,10 +31,6 @@ export class Interpreter implements Expr.ExprVisitor<$Any> {
         this.global.set('math', new $Dictionary(Runtime.Math));
         this.global.set('console', new $Dictionary(Runtime.Console));
         this.global.set('echo', Runtime.Console.get('log'));
-        this.global.set('re', Runtime.Utils.get('re'));
-        this.global.set('iter', Runtime.Utils.get('iter'));
-        this.global.set('delay', Runtime.Utils.get('delay'));
-        this.global.set('fetch', Runtime.Utils.get('fetch'));
         this.parser.errorLevel = 0;
     }
 
@@ -285,18 +281,30 @@ export class Interpreter implements Expr.ExprVisitor<$Any> {
     }
 
     public visitWhileExpr(expr: Expr.While): $Any {
+        const values: $Any[] = [];
+        const currentScope = this.scope;
         while (this.evaluate(expr.condition).isTruthy()) {
             try {
                 this.evaluate(expr.loop);
             } catch (e) {
+                this.scope = currentScope;
                 if (e instanceof $Any && e.type === DataType.Break) {
+                    if (e.value.type !== DataType.Void) {
+                        values.push(e.value);
+                    }
                     break;
                 } else if (e instanceof $Any && e.type === DataType.Continue) {
+                    if (e.value.type !== DataType.Void) {
+                        values.push(e.value);
+                    }
                     continue;
                 } else {
                     throw e;
                 }
             }
+        }
+        if (values.length) {
+            return new $List(values);
         }
         return new $Void();
     }
@@ -387,20 +395,18 @@ export class Interpreter implements Expr.ExprVisitor<$Any> {
     }
 
     public visitBreakExpr(expr: Expr.Break): $Any {
-        throw new $Any(null, DataType.Break);
+        const value = this.evaluate(expr.value);
+        throw new $Any(value, DataType.Break);
     }
 
     public visitContinueExpr(expr: Expr.Continue): $Any {
-        throw new $Any(null, DataType.Continue);
+        const value = this.evaluate(expr.value);
+        throw new $Any(value, DataType.Continue);
     }
 
     public visitTypeofExpr(expr: Expr.Typeof): $Any {
         const value = this.evaluate(expr.value);
         return new $String(DataType[value.type].toLowerCase());
-    }
-
-    public visitUseExpr(expr: Expr.Use): $Any {
-        return new $Void();
     }
 
     public visitDeleteExpr(expr: Expr.Delete): $Any {

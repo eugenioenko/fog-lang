@@ -85,6 +85,7 @@ export enum TokenType {
     Typeof,
     Var,
     Void,
+    Use,
     While,
     With
 }

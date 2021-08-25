@@ -9,4 +9,8 @@ export class $Void extends $Any {
         super(value, DataType.Void);
     }
 
+    public toString() {
+        return 'void';
+    }
+
 }

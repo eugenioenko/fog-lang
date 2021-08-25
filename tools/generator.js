@@ -21,14 +21,13 @@ const ExpressionAST = {
     Variable: ['name: Token'],
     // "Statements"
     Block: ['statements: Expr[]'],
-    Break: ['keyword: Token'],
-    Continue: ['keyword: Token'],
+    Break: ['value: Expr'],
+    Continue: ['value: Expr'],
     Expression : ['expression: Expr'],
     Func: ['name: Token', 'params: Token[]', 'body: Expr[]'],
     If: ['condition: Expr', 'thenExpr: Expr', 'elseExpr: Expr'],
     Print : ['expression: Expr'],
     Return: ['keyword: Token', 'value: Expr'],
-    Use: ['expression: Expr'],
     Var : ['name: Token', 'type: Token', 'initializer: Expr'],
     While: ['condition: Expr', 'loop: Expr']
 };

@@ -64,13 +64,6 @@ export class Parser {
         return this.tokens[this.current - 1];
     }
 
-    private peekNext(): Token {
-        if (!this.eof()) {
-            return this.tokens[this.current + 1];
-        }
-        return this.peek();
-    }
-
     private check(type: TokenType): boolean {
         return this.peek().type === type;
     }
@@ -206,6 +199,12 @@ export class Parser {
         if (this.match(TokenType.Return)) {
             return this.returnStatement();
         }
+        if (this.match(TokenType.Continue)) {
+            return this.continueStatement();
+        }
+        if (this.match(TokenType.Break)) {
+            return this.breakStatement();
+        }
         return this.condStatements();
     }
 
@@ -252,6 +251,20 @@ export class Parser {
         }
 
         return new Expr.Return(keyword, value, keyword.line);
+    }
+
+    private continueStatement(): Expr.Expr {
+        const keyword: Token = this.previous();
+        const value = this.expression();
+
+        return new Expr.Continue(value, keyword.line);
+    }
+
+    private breakStatement(): Expr.Expr {
+        const keyword: Token = this.previous();
+        const value = this.expression();
+
+        return new Expr.Break(value, keyword.line);
     }
 
     private block(): Expr.Expr[] {

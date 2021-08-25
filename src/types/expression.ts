@@ -37,7 +37,6 @@ export interface ExprVisitor<R> {
     visitIfExpr(expr: If): R;
     visitPrintExpr(expr: Print): R;
     visitReturnExpr(expr: Return): R;
-    visitUseExpr(expr: Use): R;
     visitVarExpr(expr: Var): R;
     visitWhileExpr(expr: While): R;
 }
@@ -413,11 +412,11 @@ export class Block extends Expr {
 }
 
 export class Break extends Expr {
-    public keyword: Token;
+    public value: Expr;
 
-    constructor(keyword: Token, line: number) {
+    constructor(value: Expr, line: number) {
         super();
-        this.keyword = keyword;
+        this.value = value;
         this.line = line;
     }
 
@@ -431,11 +430,11 @@ export class Break extends Expr {
 }
 
 export class Continue extends Expr {
-    public keyword: Token;
+    public value: Expr;
 
-    constructor(keyword: Token, line: number) {
+    constructor(value: Expr, line: number) {
         super();
-        this.keyword = keyword;
+        this.value = value;
         this.line = line;
     }
 
@@ -545,24 +544,6 @@ export class Return extends Expr {
 
     public toString(): string {
         return 'Expr.Return';
-    }
-}
-
-export class Use extends Expr {
-    public expression: Expr;
-
-    constructor(expression: Expr, line: number) {
-        super();
-        this.expression = expression;
-        this.line = line;
-    }
-
-    public accept<R>(visitor: ExprVisitor<R>): R {
-        return visitor.visitUseExpr(this);
-    }
-
-    public toString(): string {
-        return 'Expr.Use';
     }
 }
 
