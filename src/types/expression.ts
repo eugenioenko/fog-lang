@@ -32,6 +32,7 @@ export interface ExprVisitor<R> {
     visitBlockExpr(expr: Block): R;
     visitBreakExpr(expr: Break): R;
     visitContinueExpr(expr: Continue): R;
+    visitEachExpr(expr: Each): R;
     visitExpressionExpr(expr: Expression): R;
     visitFuncExpr(expr: Func): R;
     visitIfExpr(expr: If): R;
@@ -444,6 +445,28 @@ export class Continue extends Expr {
 
     public toString(): string {
         return 'Expr.Continue';
+    }
+}
+
+export class Each extends Expr {
+    public name: Token;
+    public iterable: Expr;
+    public loop: Expr;
+
+    constructor(name: Token, iterable: Expr, loop: Expr, line: number) {
+        super();
+        this.name = name;
+        this.iterable = iterable;
+        this.loop = loop;
+        this.line = line;
+    }
+
+    public accept<R>(visitor: ExprVisitor<R>): R {
+        return visitor.visitEachExpr(this);
+    }
+
+    public toString(): string {
+        return 'Expr.Each';
     }
 }
 

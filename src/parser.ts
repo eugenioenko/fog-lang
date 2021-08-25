@@ -215,6 +215,9 @@ export class Parser {
         if (this.match(TokenType.While)) {
             return this.whileStatement();
         }
+        if (this.match(TokenType.Each)) {
+            return this.eachStatement();
+        }
         return this.expressionStatement();
     }
 
@@ -234,6 +237,15 @@ export class Parser {
         const condition: Expr.Expr = this.expression();
         const loop: Expr.Expr = this.statement();
         return new Expr.While(condition, loop, keyword.line);
+    }
+
+    private eachStatement(): Expr.Expr {
+        const keyword = this.previous();
+        const name = this.consume(TokenType.Identifier, `Expected an identifier inside "foreach" statement`);
+        this.consume(TokenType.In, `Expected "in" keyword inside foreach statement`);
+        const iterable = this.expression();
+        const loop: Expr.Expr = this.statement();
+        return new Expr.Each(name, iterable, loop, keyword.line);
     }
 
     private printStatement(): Expr.Expr {

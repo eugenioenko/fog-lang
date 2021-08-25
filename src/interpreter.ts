@@ -308,6 +308,46 @@ export class Interpreter implements Expr.ExprVisitor<$Any> {
         }
         return new $Void();
     }
+
+    public visitEachExpr(expr: Expr.Each): $Any {
+        const currentScope = this.scope;
+        const values: $Any[] = [];
+        const value = this.evaluate(expr.iterable) as $List;
+        if (!value.isList()) {
+            this.error(`${value} is not an iterable list`);
+        }
+
+        let it = 0;
+        while (it < value.value.length) {
+            this.scope = currentScope;
+            const foreachScope = new Scope(this.scope);
+            foreachScope.set(expr.name.lexeme, value.value[it]);
+            this.scope = foreachScope;
+            try {
+                this.evaluate(expr.loop);
+            } catch (e) {
+                this.scope = currentScope;
+                if (e instanceof $Any && e.type === DataType.Break) {
+                    if (e.value.type !== DataType.Void) {
+                        values.push(e.value);
+                    }
+                    break;
+                } else if (e instanceof $Any && e.type === DataType.Continue) {
+                    if (e.value.type !== DataType.Void) {
+                        values.push(e.value);
+                    }
+                    continue;
+                } else {
+                    throw e;
+                }
+            }
+        }
+        if (values.length) {
+            return new $List(values);
+        }
+        return new $Void();
+    }
+
     public visitCallExpr(expr: Expr.Call): $Any {
         // verify callee is a function
         const callee = this.evaluate(expr.callee);

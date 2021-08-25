@@ -23,6 +23,7 @@ const ExpressionAST = {
     Block: ['statements: Expr[]'],
     Break: ['value: Expr'],
     Continue: ['value: Expr'],
+    Each: ['name: Token', 'iterable: Expr', 'loop: Expr'],
     Expression : ['expression: Expr'],
     Func: ['name: Token', 'params: Token[]', 'body: Expr[]'],
     If: ['condition: Expr', 'thenExpr: Expr', 'elseExpr: Expr'],

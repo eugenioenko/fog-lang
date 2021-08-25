@@ -6,4 +6,8 @@ var b = while a < 10 {
     use a
 }
 print b
+
+each(var c in while a < 10 ++a) {
+
+}
 `
