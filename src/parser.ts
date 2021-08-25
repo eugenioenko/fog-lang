@@ -223,7 +223,7 @@ export class Parser {
 
     private ifStatement(): Expr.Expr {
         const keyword = this.previous();
-        const condition: Expr.Expr = this.expression();
+        const condition: Expr.Expr = this.condStatements();
         const thenStmt: Expr.Expr = this.statement();
         let elseStmt: Expr.Expr =  null;
         if (this.match(TokenType.Else)) {
@@ -501,7 +501,7 @@ export class Parser {
             return new Expr.Variable(identifier, identifier.line);
         }
         if (this.match(TokenType.LeftParen)) {
-            const expr: Expr.Expr = this.expression();
+            const expr: Expr.Expr = this.condStatements();
             this.consume(TokenType.RightParen, `Expected ")" after expression`);
             return new Expr.Grouping(expr, expr.line);
         }

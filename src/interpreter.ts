@@ -321,7 +321,7 @@ export class Interpreter implements Expr.ExprVisitor<$Any> {
         while (it < value.value.length) {
             this.scope = currentScope;
             const foreachScope = new Scope(this.scope);
-            foreachScope.set(expr.name.lexeme, value.value[it]);
+            foreachScope.set(expr.name.lexeme, value.value[it++]);
             this.scope = foreachScope;
             try {
                 this.evaluate(expr.loop);
